@@ -1,7 +1,7 @@
 services:
   - type: web
     name: takfinance
-    branch: takfinance-bot
+    branch: main
     plan: starter
     domains:
       - takfinance.onrender.com
