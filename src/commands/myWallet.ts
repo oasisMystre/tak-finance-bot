@@ -9,6 +9,7 @@ import {
   DEPOSIT_ACTION,
   DEPOSIT_COMMAND,
   MY_WALLET_COMMAND,
+  PRIVATE_KEY_ACTION,
   WITHDRAW_ACTION,
   WITHDRAW_COMMAND,
 } from "../constants";
@@ -28,6 +29,7 @@ export default function MyWalletCommand(bot: Telegraf) {
       Markup.inlineKeyboard([
         Markup.button.callback("Withdraw", WITHDRAW_ACTION),
         Markup.button.callback("Deposit", DEPOSIT_ACTION),
+        Markup.button.callback("Export Wallet", PRIVATE_KEY_ACTION),
       ])
     );
   };
@@ -52,6 +54,16 @@ export default function MyWalletCommand(bot: Telegraf) {
 
   bot.action(DEPOSIT_ACTION, echoDeposit);
   bot.action(WITHDRAW_ACTION, echoWithdraw);
+  bot.action(PRIVATE_KEY_ACTION, async (ctx) => {
+    const userId = ctx.from.username;
+    const wallet = await Application.instance.wallet.getWallet(userId);
+    await ctx.replyWithMarkdownV2(
+      readFileSync("./src/md/private.md").replace(
+        /%private_key%/,
+        wallet.privateKey
+      )
+    );
+  });
 
   bot.command(DEPOSIT_COMMAND, async (ctx) => {
     /// fix: data input validation

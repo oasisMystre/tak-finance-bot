@@ -13,6 +13,7 @@ export const NEW_FUNCTION_COMMAND = "New Function";
 /// My wallet scene
 export const DEPOSIT_ACTION = "deposit-action";
 export const WITHDRAW_ACTION = "withdraw-action";
+export const PRIVATE_KEY_ACTION = "private-key-action";
 
 export const DEPOSIT_COMMAND = "deposit";
 export const WITHDRAW_COMMAND = "withdraw";
