@@ -3,4 +3,4 @@ Join our socials
 [X](https://x.com/tak_finance)
 
 Or visit our website
-[$SORAI](https://tak.finance)
+[TakFinanceBot](https://tak.finance)
