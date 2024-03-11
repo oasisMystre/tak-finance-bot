@@ -1,0 +1,1 @@
+Hey, Just add @tak_finance_bot to your group and let it manage all your community management needs, including tipping.

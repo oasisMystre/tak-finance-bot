@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: takfinance
+    branch: takfinance-bot
+    plan: starter
+    domains:
+      - takfinance.onrender.com
+    envVars:
+      - fromGroup: takfinance-bot
+    runtime: node
+    startCommand: pnpm start
+    buildCommand: pnpm install && tsc
