@@ -1,12 +1,15 @@
 import "dotenv/config";
+import { fastify } from "fastify";
 import { Markup, Telegraf } from "telegraf";
 import admin, { ServiceAccount } from "firebase-admin";
-import { fastify } from "fastify";
 
 import { readFileSync } from "./lib/utils";
 import tipCommand from "./commands/tip";
+import infoCommand from "./commands/info";
+import statusCommand from "./commands/status";
 import MyWalletCommand from "./commands/myWallet";
 import newFunctionCommand from "./commands/newFunction";
+import serviceAccount from "../assets/serviceAccount.json";
 import {
   ABOUT_COMMAND,
   BALANCE_COMMAND,
@@ -17,12 +20,11 @@ import {
   PRICE_COMMAND,
   SOCIALS_COMMAND,
   START_COMMAND,
+  STATUS_COMMAND,
   TIP_COMMAND,
   TOKENS_COMMAND,
   WITHDRAW_COMMAND,
 } from "./constants";
-import serviceAccount from "../assets/serviceAccount.json";
-import InfoCommand from "./commands/info";
 
 /// Create Wallet
 function createBot(accessToken: string) {
@@ -35,23 +37,27 @@ function createBot(accessToken: string) {
     },
     {
       command: TIP_COMMAND,
-      description: "e.g /tip 0.1 ETH @user1 @userN",
+      description: "Tip a user individually or from group",
     },
     {
       command: BALANCE_COMMAND,
-      description: "e.g /balance ETH",
+      description: "Check token or coin balance",
     },
     {
       command: WITHDRAW_COMMAND,
-      description: "e.g /withdraw 1 ETH 0x783...Dd070",
+      description: "Withdraw token or coin from wallet",
     },
     {
       command: DEPOSIT_COMMAND,
-      description: "e.g /deposit ETH",
+      description: "Deposit token or coin to wallet",
     },
+    // {
+    //   command: PRICE_COMMAND,
+    //   description: "Check token or coin price",
+    // },
     {
-      command: PRICE_COMMAND,
-      description: "e.g /price ETH",
+      command: STATUS_COMMAND,
+      description: "Get Transaction Status from txHash",
     },
     {
       command: TOKENS_COMMAND,
@@ -78,8 +84,9 @@ function createBot(accessToken: string) {
     );
   });
 
-  InfoCommand(bot);
+  infoCommand(bot);
   tipCommand(bot);
+  statusCommand(bot);
   MyWalletCommand(bot);
   newFunctionCommand(bot);
 

@@ -1,7 +1,4 @@
-import {
-  PathOrFileDescriptor,
-  readFileSync as read,
-} from "fs";
+import { PathOrFileDescriptor, readFileSync as read } from "fs";
 
 export function cleanText(value: string) {
   return value
@@ -23,13 +20,16 @@ export function cleanText(value: string) {
     .replace(/\!/g, "\\!");
 }
 
-export function readFileSync(...params: Parameters<typeof read>);
-export function readFileSync(descriptor: PathOrFileDescriptor);
-export function readFileSync(descriptor: PathOrFileDescriptor, ...args: any[]) {
+export function readFileSync(...params: Parameters<typeof read>) : string;
+export function readFileSync(descriptor: PathOrFileDescriptor) :  string;
+export function readFileSync(
+  descriptor: PathOrFileDescriptor,
+  ...args: any[]
+): string {
   if (args.length === 0) {
     const text = read(descriptor, "utf-8") as string;
     return cleanText(text);
   }
 
-  return read(descriptor, ...args);
+  return read(descriptor, ...args) as unknown as string;
 }
