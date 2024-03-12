@@ -56,34 +56,26 @@ export class WalletController extends Injector {
   transfer(
     from: Wallet,
     to: string | ethers.Addressable,
-    dia: bigint,
-    isChecked?: boolean
+    dia: bigint
   ): Promise<ethers.TransactionResponse>;
   transfer(
     from: Wallet,
+    to: string | ethers.Addressable,
     contract: ethers.Contract,
-    dia: bigint,
-    isChecked?: boolean
+    dia: bigint
   ): Promise<ethers.TransactionResponse>;
   async transfer(
     from: Wallet,
     to: string | ethers.Addressable,
     ...args: any[]
   ): Promise<ethers.TransactionResponse> {
-    if (args.length > 2) {
-      const [contract, dia, isChecked] = args;
-      if (isChecked) {
-        const { gasPrice } = await this.provider.getFeeData();
-        const balance = await this.getBalance(from, contract);
-        const totalAmount = dia + gasPrice;
-        if (balance < totalAmount) throw new InsufficientBalance(gasPrice);
-      }
+    if (args.length > 1) {
+      const [contract, dia] = args;
 
       return contract.transfer(to, dia, from);
     } else {
-      const [dia, isChecked] = args;
-      if (isChecked) {
-      }
+      const [dia] = args;
+
       return from.sendTransaction({
         to: to,
         value: dia,

@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { TransactionResponse, ethers } from "ethers";
 
 import type { Message } from "telegraf/types";
 import { Context, Markup, Telegraf } from "telegraf";
@@ -16,6 +16,7 @@ import {
 import { cleanText, readFileSync } from "../lib/utils";
 import { unsupportedToken } from "./shared";
 import { InsufficientBalance } from "../lib/controllers/exceptions";
+import { SupportedAddress } from "../data/addressList";
 
 export default function MyWalletCommand(bot: Telegraf) {
   const echoBalance = async (ctx: Context, balance: bigint) => {
@@ -82,47 +83,45 @@ export default function MyWalletCommand(bot: Telegraf) {
     const userId = ctx.message.from.username;
     const message = ctx.message as Message.TextMessage;
     const actions = message.text.split(" ");
+
     if (actions.length < 4) return echoWithdraw(ctx);
-    const [, amount, token, address] = actions;
+
+    let [, amount, token, address] = actions;
+    token = token.toLowerCase();
     const wallet = await Application.instance.wallet.getWallet(userId);
 
     /// Only ETH is supported for now
-    switch (token) {
-      case "ETH":
-        try {
-          const tx = await Application.instance.wallet.transfer(
-            wallet,
-            address,
-            ethers.parseUnits(amount),
-            true
-          );
+    let tx: TransactionResponse;
 
-          ctx.replyWithMarkdownV2(
-            readFileSync("./src/md/transaction-processing.md").replace(
-              /%tx%/,
-              tx.hash
-            )
-          );
-        } catch (error) {
-          if (error instanceof InsufficientBalance)
-            ctx.reply((error as Error).message);
-          else
-            ctx.reply(
-              "An unexpected error occur make sure you have enough token to cover this transaction."
-            );
-        }
-        break;
-      default:
-        return ctx.replyWithMarkdownV2(
-          readFileSync("./src/md/unsupported-token.md").replace(
-            /%token%/,
-            token
-          ),
-          Markup.inlineKeyboard([
-            Markup.button.url("Check supported Tokens", "https://tak.finance"),
-          ])
+    try {
+      if (token === "eth") {
+        tx = await Application.instance.wallet.transfer(
+          wallet,
+          address,
+          ethers.parseUnits(amount)
         );
+      } else if (Object.keys(SupportedAddress).includes(token)) {
+        const address = SupportedAddress[token];
+        const contract = Application.instance.wallet.getContract(address);
+        const decimals = await contract.decimals();
+        const dia = ethers.parseUnits(amount, decimals);
+        tx = await Application.instance.wallet.transfer(
+          wallet,
+          address,
+          contract,
+          dia
+        );
+      } else return unsupportedToken(ctx, token);
+    } catch (error) {
+      return ctx.replyWithMarkdownV2((error as Error).message);
     }
+
+    ctx.replyWithMarkdownV2(
+      readFileSync("./src/md/transaction-processing.md").replace(
+        /%tx%/,
+        tx.hash
+      )
+    );
   });
 
   bot.command(BALANCE_COMMAND, async (ctx) => {
