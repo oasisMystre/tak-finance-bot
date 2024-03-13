@@ -18,6 +18,10 @@ export default function statusCommand(bot: Telegraf) {
     if (actions.length < 1) return echo(ctx);
 
     const [, txHash] = actions;
+    /// validation
+    if (!ethers.isAddress(txHash))
+      return ctx.reply("Invalid transaction hash. Provide a valid hash.");
+
     const transaction =
       await Application.instance.wallet.provider.getTransaction(txHash);
     await ctx.replyWithMarkdownV2(

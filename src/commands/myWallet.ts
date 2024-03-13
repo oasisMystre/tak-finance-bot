@@ -92,7 +92,6 @@ export default function MyWalletCommand(bot: Telegraf<ApplicationContext>) {
 
   bot.command(WITHDRAW_COMMAND, async (ctx) => {
     if (ctx.chat.type === "private") {
-      /// fix: data input validation
       const message = ctx.message as Message.TextMessage;
       const actions = message.text.split(" ");
 
@@ -101,7 +100,11 @@ export default function MyWalletCommand(bot: Telegraf<ApplicationContext>) {
       let [, amount, token, address] = actions;
       token = token.toLowerCase();
 
-      /// Only ETH is supported for now
+      // Validation
+      if (!ethers.isAddress(address))
+        return ctx.reply("Invalid withdraw address.");
+
+      // Only ETH is supported for now
       let tx: TransactionResponse;
 
       try {
