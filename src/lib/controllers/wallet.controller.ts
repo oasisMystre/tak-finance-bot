@@ -3,7 +3,6 @@ import { Wallet, ethers } from "ethers";
 import Injector from "../injector";
 import Repository from "../repository";
 import { ERC20_ABI } from "../../abis";
-import { InsufficientBalance } from "./exceptions";
 
 type CloudWallet = {
   privateKey: string;

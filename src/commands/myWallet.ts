@@ -1,7 +1,8 @@
+import QRCode from "qrcode";
 import { TransactionResponse, ethers } from "ethers";
 
 import type { Message } from "telegraf/types";
-import { Context, Markup, Telegraf } from "telegraf";
+import { Context, Input, Markup, Telegraf } from "telegraf";
 
 import Application from "../lib";
 import { cleanText, readFileSync } from "../lib/utils";
@@ -21,6 +22,20 @@ import {
 
 export default function MyWalletCommand(bot: Telegraf<ApplicationContext>) {
   const echoBalance = async (ctx: Context, balance: bigint) => {
+    const inlines = [
+      Markup.button.callback("Deposit", DEPOSIT_ACTION),
+      Markup.button.callback(
+        "Withdraw",
+        WITHDRAW_ACTION,
+        ctx.chat.type === "private"
+      ),
+      Markup.button.callback(
+        "Export Wallet",
+        PRIVATE_KEY_ACTION,
+        ctx.chat.type === "private"
+      ),
+    ];
+
     await ctx.replyWithMarkdownV2(
       cleanText(
         readFileSync("./src/md/wallet.md", "utf-8").replace(
@@ -28,16 +43,11 @@ export default function MyWalletCommand(bot: Telegraf<ApplicationContext>) {
           ethers.formatUnits(balance)
         )
       ),
-      Markup.inlineKeyboard([
-        Markup.button.callback("Withdraw", WITHDRAW_ACTION),
-        Markup.button.callback("Deposit", DEPOSIT_ACTION),
-        Markup.button.callback("Export Wallet", PRIVATE_KEY_ACTION),
-      ])
+      Markup.inlineKeyboard(inlines)
     );
   };
 
   const echoEthBalance = async (ctx: ApplicationContext) => {
-    const userId = ctx.message.from.username;
     const controller = Application.instance.wallet;
     const balance = await controller.getBalance(ctx.wallet);
     await echoBalance(ctx, balance);
@@ -71,53 +81,61 @@ export default function MyWalletCommand(bot: Telegraf<ApplicationContext>) {
     if (actions.length < 2) return echoDeposit(ctx);
 
     const [, token] = actions; /// milestone: can send from other chain
-    await ctx.replyWithMarkdownV2(
-      "Please deposit to _" + ctx.wallet.address + "_"
+    await ctx.replyWithPhoto(
+      Input.fromBuffer(await QRCode.toBuffer(ctx.wallet.address)),
+      {
+        parse_mode: "Markdown",
+        caption: "Please deposit to _" + ctx.wallet.address + "_",
+      }
     );
   });
 
   bot.command(WITHDRAW_COMMAND, async (ctx) => {
-    /// fix: data input validation
-    const message = ctx.message as Message.TextMessage;
-    const actions = message.text.split(" ");
+    if (ctx.chat.type === "private") {
+      /// fix: data input validation
+      const message = ctx.message as Message.TextMessage;
+      const actions = message.text.split(" ");
 
-    if (actions.length < 4) return echoWithdraw(ctx);
+      if (actions.length < 4) return echoWithdraw(ctx);
 
-    let [, amount, token, address] = actions;
-    token = token.toLowerCase();
+      let [, amount, token, address] = actions;
+      token = token.toLowerCase();
 
-    /// Only ETH is supported for now
-    let tx: TransactionResponse;
+      /// Only ETH is supported for now
+      let tx: TransactionResponse;
 
-    try {
-      if (token === "eth") {
-        tx = await Application.instance.wallet.transfer(
-          ctx.wallet,
-          address,
-          ethers.parseUnits(amount)
-        );
-      } else if (Object.keys(SupportedAddress).includes(token)) {
-        const address = SupportedAddress[token];
-        const contract = Application.instance.wallet.getContract(address);
-        const decimals = await contract.decimals();
-        const dia = ethers.parseUnits(amount, decimals);
-        tx = await Application.instance.wallet.transfer(
-          ctx.wallet,
-          address,
-          contract,
-          dia
-        );
-      } else return unsupportedToken(ctx, token);
-    } catch (error) {
-      return ctx.replyWithMarkdownV2((error as Error).message);
+      try {
+        if (token === "eth") {
+          tx = await Application.instance.wallet.transfer(
+            ctx.wallet,
+            address,
+            ethers.parseUnits(amount)
+          );
+        } else if (Object.keys(SupportedAddress).includes(token)) {
+          const address = SupportedAddress[token];
+          const contract = Application.instance.wallet.getContract(address);
+          const decimals = await contract.decimals();
+          const dia = ethers.parseUnits(amount, decimals);
+          tx = await Application.instance.wallet.transfer(
+            ctx.wallet,
+            address,
+            contract,
+            dia
+          );
+        } else return unsupportedToken(ctx, token);
+      } catch (error) {
+        return ctx.replyWithMarkdownV2((error as Error).message);
+      }
+
+      ctx.replyWithMarkdownV2(
+        readFileSync("./src/md/transaction-processing.md").replace(
+          /%tx%/,
+          tx.hash
+        )
+      );
     }
 
-    ctx.replyWithMarkdownV2(
-      readFileSync("./src/md/transaction-processing.md").replace(
-        /%tx%/,
-        tx.hash
-      )
-    );
+    return;
   });
 
   bot.command(BALANCE_COMMAND, async (ctx) => {
