@@ -25,10 +25,17 @@ import {
   TOKENS_COMMAND,
   WITHDRAW_COMMAND,
 } from "./constants";
+import { ApplicationContext } from "./types";
+import Application from "./lib";
 
 /// Create Wallet
 function createBot(accessToken: string) {
-  const bot = new Telegraf(accessToken);
+  const bot = new Telegraf<ApplicationContext>(accessToken);
+
+  bot.use(async (ctx, next) => {
+    ctx.wallet = await Application.instance.wallet.getWallet(ctx.from.username);
+    await next();
+  });
 
   bot.telegram.setMyCommands([
     {
@@ -80,7 +87,9 @@ function createBot(accessToken: string) {
   bot.start(async (ctx) => {
     ctx.replyWithMarkdownV2(
       readFileSync("./src/md/start.md"),
-      Markup.keyboard([MY_WALLET_COMMAND, NEW_FUNCTION_COMMAND])
+      ctx.chat.type == "group"
+        ? Markup.removeKeyboard()
+        : Markup.keyboard([MY_WALLET_COMMAND, NEW_FUNCTION_COMMAND])
     );
   });
 

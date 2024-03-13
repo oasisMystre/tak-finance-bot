@@ -8,8 +8,8 @@ async function main() {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount as ServiceAccount),
   });
-
-  await Application.instance.tip.tipUsers("@typenonnull", 1n, ["@nuelidu"]);
+ const wallet = await Application.instance.wallet.getWallet("@typenonnull");
+  await Application.instance.tip.tipUsers(wallet, 1n, "@nuelidu");
 }
 
 main().catch(console.log);

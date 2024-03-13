@@ -4,6 +4,11 @@ import type { Message } from "telegraf/types";
 import { Context, Markup, Telegraf } from "telegraf";
 
 import Application from "../lib";
+import { cleanText, readFileSync } from "../lib/utils";
+
+import { unsupportedToken } from "./shared";
+import { ApplicationContext } from "../types";
+import { SupportedAddress } from "../data/addressList";
 import {
   BALANCE_COMMAND,
   DEPOSIT_ACTION,
@@ -13,12 +18,8 @@ import {
   WITHDRAW_ACTION,
   WITHDRAW_COMMAND,
 } from "../constants";
-import { cleanText, readFileSync } from "../lib/utils";
-import { unsupportedToken } from "./shared";
-import { InsufficientBalance } from "../lib/controllers/exceptions";
-import { SupportedAddress } from "../data/addressList";
 
-export default function MyWalletCommand(bot: Telegraf) {
+export default function MyWalletCommand(bot: Telegraf<ApplicationContext>) {
   const echoBalance = async (ctx: Context, balance: bigint) => {
     await ctx.replyWithMarkdownV2(
       cleanText(
@@ -35,11 +36,10 @@ export default function MyWalletCommand(bot: Telegraf) {
     );
   };
 
-  const echoEthBalance = async (ctx: Context) => {
+  const echoEthBalance = async (ctx: ApplicationContext) => {
     const userId = ctx.message.from.username;
     const controller = Application.instance.wallet;
-    const wallet = await controller.getWallet(userId);
-    const balance = await controller.getBalance(wallet);
+    const balance = await controller.getBalance(ctx.wallet);
     await echoBalance(ctx, balance);
   };
 
@@ -56,31 +56,28 @@ export default function MyWalletCommand(bot: Telegraf) {
   bot.action(DEPOSIT_ACTION, echoDeposit);
   bot.action(WITHDRAW_ACTION, echoWithdraw);
   bot.action(PRIVATE_KEY_ACTION, async (ctx) => {
-    const userId = ctx.from.username;
-    const wallet = await Application.instance.wallet.getWallet(userId);
     await ctx.replyWithMarkdownV2(
       readFileSync("./src/md/private.md").replace(
         /%private_key%/,
-        wallet.privateKey
+        ctx.wallet.privateKey
       )
     );
   });
 
   bot.command(DEPOSIT_COMMAND, async (ctx) => {
     /// fix: data input validation
-    const userId = ctx.message.from.username;
     const message = ctx.message as Message.TextMessage;
     const actions = message.text.split(" ");
     if (actions.length < 2) return echoDeposit(ctx);
 
     const [, token] = actions; /// milestone: can send from other chain
-    const wallet = await Application.instance.wallet.getWallet(userId);
-    await ctx.replyWithMarkdownV2("Please deposit to _" + wallet.address + "_");
+    await ctx.replyWithMarkdownV2(
+      "Please deposit to _" + ctx.wallet.address + "_"
+    );
   });
 
   bot.command(WITHDRAW_COMMAND, async (ctx) => {
     /// fix: data input validation
-    const userId = ctx.message.from.username;
     const message = ctx.message as Message.TextMessage;
     const actions = message.text.split(" ");
 
@@ -88,7 +85,6 @@ export default function MyWalletCommand(bot: Telegraf) {
 
     let [, amount, token, address] = actions;
     token = token.toLowerCase();
-    const wallet = await Application.instance.wallet.getWallet(userId);
 
     /// Only ETH is supported for now
     let tx: TransactionResponse;
@@ -96,7 +92,7 @@ export default function MyWalletCommand(bot: Telegraf) {
     try {
       if (token === "eth") {
         tx = await Application.instance.wallet.transfer(
-          wallet,
+          ctx.wallet,
           address,
           ethers.parseUnits(amount)
         );
@@ -106,7 +102,7 @@ export default function MyWalletCommand(bot: Telegraf) {
         const decimals = await contract.decimals();
         const dia = ethers.parseUnits(amount, decimals);
         tx = await Application.instance.wallet.transfer(
-          wallet,
+          ctx.wallet,
           address,
           contract,
           dia

@@ -5,7 +5,7 @@ import { PRICE_COMMAND } from "../constants";
 import { readFileSync } from "../lib/utils";
 import { unsupportedToken } from "./shared";
 
-export default function Price(bot: Telegraf) {
+export default function priceCommand(bot: Telegraf) {
   const echo = async (ctx: Context) => {
     await ctx.replyWithMarkdownV2(
       "Please send, \n _/price Token_ \n E.g /Price ETH"

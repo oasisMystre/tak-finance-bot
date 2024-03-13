@@ -4,9 +4,11 @@ import { Context, Markup, Telegraf } from "telegraf";
 
 import Application from "../lib";
 import { readFileSync } from "../lib/utils";
-import { TIP_COMMAND } from "../constants";
 
-export default function tipCommand(bot: Telegraf) {
+import { TIP_COMMAND } from "../constants";
+import { ApplicationContext } from "../types";
+
+export default function tipCommand(bot: Telegraf<ApplicationContext>) {
   const echo = async function (ctx: Context) {
     const username = ctx.message.from.username;
     await ctx.replyWithMarkdownV2(
@@ -25,9 +27,9 @@ export default function tipCommand(bot: Telegraf) {
     const [, amount, token, ...usernames] = actions;
     const messages = [];
     const tips = await Application.instance.tip.tipUsers(
-      userId,
+      ctx.wallet,
       ethers.parseUnits(amount),
-      usernames
+      ...usernames
     );
 
     let index = 0;
