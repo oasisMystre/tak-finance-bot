@@ -1,4 +1,4 @@
 *🔒 Export private key*
 
-_%private_key%_
+_||%private_key%||_
 
