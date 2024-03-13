@@ -27,12 +27,12 @@ export default function MyWalletCommand(bot: Telegraf<ApplicationContext>) {
       Markup.button.callback(
         "Withdraw",
         WITHDRAW_ACTION,
-        ctx.chat.type === "private"
+        ctx.chat.type !== "private"
       ),
       Markup.button.callback(
         "Export Wallet",
         PRIVATE_KEY_ACTION,
-        ctx.chat.type === "private"
+        ctx.chat.type !== "private"
       ),
     ];
 
