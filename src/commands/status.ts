@@ -4,7 +4,7 @@ import { Message } from "telegraf/types";
 import { Context, Telegraf } from "telegraf";
 
 import Application from "../lib";
-import { readFileSync } from "../lib/utils";
+import { cleanText, readFileSync } from "../lib/utils";
 import { STATUS_COMMAND } from "../constants";
 
 export default function statusCommand(bot: Telegraf) {
@@ -25,11 +25,16 @@ export default function statusCommand(bot: Telegraf) {
     const transaction =
       await Application.instance.wallet.provider.getTransaction(txHash);
     await ctx.replyWithMarkdownV2(
-      readFileSync("./src/md/status-info.md")
-        .replace(/%confimations%/, transaction.confirmations.toString())
-        .replace(/%isMined%/, transaction.isMined.toString())
-        .replace(/%maxFeePerGas%/, ethers.formatUnits(transaction.maxFeePerGas))
-        .replace(/%gasPrice%/, ethers.formatUnits(transaction.gasPrice))
+      cleanText(
+        readFileSync("./src/md/status-info.md", "utf-8")
+          .replace(/%confimations%/, transaction.confirmations.toString())
+          .replace(/%isMined%/, transaction.isMined.toString())
+          .replace(
+            /%maxFeePerGas%/,
+            ethers.formatUnits(transaction.maxFeePerGas)
+          )
+          .replace(/%gasPrice%/, ethers.formatUnits(transaction.gasPrice))
+      )
     );
   });
 }
