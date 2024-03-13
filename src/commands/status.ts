@@ -15,7 +15,7 @@ export default function statusCommand(bot: Telegraf) {
   bot.command(STATUS_COMMAND, async (ctx) => {
     const message = ctx.message as Message.TextMessage;
     const actions = message.text.split(" ");
-    if (actions.length < 1) return echo(ctx);
+    if (actions.length < 2) return echo(ctx);
 
     const [, txHash] = actions;
     /// validation
