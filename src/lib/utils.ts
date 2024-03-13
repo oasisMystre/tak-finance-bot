@@ -7,7 +7,7 @@ export function cleanText(value: string) {
     .replace(/\(/g, "\\(")
     .replace(/\)/g, "\\)")
     .replace(/\~/g, "\\~")
-    .replace(/\`/g, "\\`")
+    //.replace(/\`/g, "\\`")
     .replace(/\>/g, "\\>")
     .replace(/\#/g, "\\#")
     .replace(/\+/g, "\\+")

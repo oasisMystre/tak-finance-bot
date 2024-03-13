@@ -1,4 +1,4 @@
 Please send,
-_/deposit Token_
+`/deposit Token`
 
 E.g _/deposit ETH_
